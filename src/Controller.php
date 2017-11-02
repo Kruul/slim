@@ -32,9 +32,6 @@ abstract class Controller
                                 '..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'view'.DIRECTORY_SEPARATOR;
 
         $this->get('view')->setTemplatepath($viewdir);
-        //$this->setRequest($param[0]);
-        //$this->setResponse($param[1]);
-        //$this->setArguments($param[2]);
         return call_user_func_array(array($this, trim($actionName,'__')), []);
     }
 
@@ -55,9 +52,6 @@ abstract class Controller
      * @param Response?
      */
     protected function render($file, $args=array()){
-        //return $this->container->view->render($this->response, $file, $args);
-        //$this->container->response=$this->container->response->withHeader('content-type','text/xml');
-        //print_r($this->container->response);exit;
         return $this->container->view->render($this->container->response, $file, $args);
     }
 
@@ -99,14 +93,11 @@ abstract class Controller
         return $default;
     }
 
-
     /**
      * Get the POST params
      */
     protected function getPost(){
-        $post = array_diff_key($this->request->getParams(), array_flip(array(
-            '_METHOD',
-        )));
+        $post = array_diff_key($this->container->request->getParams(), array_flip(array('_METHOD',    )));
         return $post;
     }
 
@@ -129,8 +120,7 @@ abstract class Controller
      * @return mixed
      */
     protected function get($name){
-    //    return $this->app->getContainer()->get($name);
-            return $this->container->get($name);
+         return $this->container->get($name);
     }
     /**
      * Redirect.
