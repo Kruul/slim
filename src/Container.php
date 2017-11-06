@@ -32,7 +32,6 @@ class Container {
 
   }
 
-
   public function init(){
     $config=array();
     foreach (\glob('config/autoload/{{,*.}global,{,*.}local}.php', GLOB_BRACE) as $file) {
@@ -59,7 +58,6 @@ class Container {
     $this->container['AppFactory']=function($c) {
       if (isset($c['config']['factories'])){
         foreach ($c['config']['factories'] as $name=>$callable){
-          //print_r($callable);
             if ($callable instanceof \Closure) {
               if (isset($c[$name])) continue;
               $c[$name]=$c->factory($callable);
@@ -77,6 +75,25 @@ class Container {
       $c['view']=function ($c){
         return new \Kruul\Slim\PhpRenderer($c);
       };
+
+      $c['phpErrorHandler'] = function ($c) {
+	return function ($request, $response, $exception) use ($c) {
+          return $c['response']
+	        ->withStatus(500)
+                ->withHeader('Content-Type', 'text/html')
+                ->write($exception->getMessage());
+		  };
+	  };
+
+      $c['notFoundHandler'] = function ($c) {
+        return function ($request, $response) use ($c) {
+          return $c['response']
+              ->withStatus(404)
+              ->withHeader('Content-Type', 'text/html')
+              ->write('Page not found');
+         };
+      };
+
       $app=new \Slim\App($c);
       foreach ($c['config']['routes'] as $name=>$rule){
         $method = preg_split('[,]',strtolower($rule['method']));
@@ -89,6 +106,7 @@ class Container {
         foreach ($c['config']['middleware'] as $name=>$middleware ){
           $app->add($middleware);
         };
+
       return $app;
     }; //AppFactory
 
