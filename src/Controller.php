@@ -13,7 +13,6 @@ use Psr\Http\Message\UriInterface;
  */
 abstract class Controller
 {
-    // Optional properties
     protected $container;
     protected $request;
     protected $response;
@@ -24,6 +23,10 @@ abstract class Controller
      */
     public function __construct($container)  {
         $this->container = $container;
+    }
+
+    public function getContainer(){
+        return $this->container;
     }
 
     public function __call($actionName,$param){
@@ -97,8 +100,7 @@ abstract class Controller
      * Get the POST params
      */
     protected function getPost(){
-        $post = array_diff_key($this->container->request->getParams(), array_flip(array('_METHOD',    )));
-        return $post;
+        return  array_diff_key($this->container->request->getParams(), array_flip(array('_METHOD',    )));
     }
 
     /**

@@ -81,7 +81,7 @@ class Container {
           return $c['response']
 	        ->withStatus(500)
                 ->withHeader('Content-Type', 'text/html')
-                ->write($exception->getMessage());
+                ->write($exception->getMessage().' in file '.basename($exception->getFile()).' in line '.$exception->getLine());
 		  };
 	  };
 
