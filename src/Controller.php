@@ -99,8 +99,11 @@ abstract class Controller
     /**
      * Get the POST params
      */
-    protected function getPost(){
-        return  array_diff_key($this->container->request->getParams(), array_flip(array('_METHOD',    )));
+    public function getPost($name='',$defaults=null){
+        if (empty($name)){
+            return (string)$this->container->request->getBody();
+        }
+            else return $this->container->request->getParsedBodyParam($name, $defaults);
     }
 
     /**
