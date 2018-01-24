@@ -9,15 +9,16 @@ use Psr\Http\Message\UriInterface;
  *
  *  2017-01-25 * fix response (get from container)
  *  2017-01-27 * add setHeader
- *
+ *  2018-01-24 * fix post
  */
 abstract class Controller
 {
     protected $container;
-    protected $request;
+
+    /*    protected $request;
     protected $response;
     protected $arguments;
-
+    */
     /**
      * @param \Slim\Container
      */
@@ -55,19 +56,19 @@ abstract class Controller
      * @param Response?
      */
     protected function render($file, $args=array()){
-        return $this->container->view->render($this->container->response, $file, $args);
+        return $this->get('view')->render($this->get('response'), $file, $args);
     }
 
     protected function setHeader($key,$value){
-        $this->container->view->setHeader($key, $value);
+        $this->get('view')->setHeader($key, $value);
         return $this;
     }
 
     /**
-     * Return true if XHR request
+     * Return true if XHR request$content = $request->getContent();
      */
     protected function isXhr(){
-        return $this->container->request->isXhr();
+        return $this->get('request')->isXhr();
     }
 
 
@@ -96,29 +97,24 @@ abstract class Controller
         return $default;
     }
 
-    /**
-     * Get the POST params
-     */
-    public function getPost($name='',$defaults=null){
-        if (empty($name)){
-            return (string)$this->container->request->getBody();
-        }
-            else return $this->container->request->getParsedBodyParam($name, $defaults);
+    public function getBodyContent(){
+       return $this->get('request')->getBody()->getContents();
     }
 
-    /**
-     * Get the POST params
-     * @param string $name
-     */
+    public function getParsedBodyParam($name,$defaults = null){
+        return $this->get('request')->getParsedBodyParam($name, $defaults);
+    }
+
     protected function getQueryParam($name, $default=null){
-        return $this->container->request->getQueryParam($name, $default);
+        return $this->get('request')->getQueryParam($name, $default);
     }
     /**
-     * Get the POST params
+     * Get the GET params
      */
     protected function getQueryParams(){
-        return $this->container->request->getQueryParams();
+        return $this->get('request')->getQueryParams();
     }
+
     /**
      * Shorthand method to get dependency from container
      * @param $name
@@ -140,7 +136,7 @@ abstract class Controller
      * @return self
      */
     protected function redirect($url, $status = 302){
-        return $this->container->response->withRedirect($url, $status);
+        return $this->get('response')->withRedirect($url, $status);
     }
     /**
      * Pass on the control to another action. Of the same class (for now)
