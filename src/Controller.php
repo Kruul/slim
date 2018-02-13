@@ -64,6 +64,11 @@ abstract class Controller
         return $this;
     }
 
+    public function setLayout($layout){
+        $this->get('view')->setLayout($layout);
+        return $this;
+    }
+
     /**
      * Return true if XHR request$content = $request->getContent();
      */

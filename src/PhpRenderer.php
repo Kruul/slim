@@ -10,12 +10,16 @@ use Psr\Http\Message\ResponseInterface;
 class PhpRenderer {
     private $templatePath;
     private $header;
+    private $layout; // ='template.phtml';
+    private $content;
 
     public function __construct($container){
       $this->container=$container;
+
     }
     public function setTemplatepath($templatePath){
       $this->templatePath=$templatePath;
+      //$this->content();
       return $this;
     }
     public function setHeader($key, $value){
@@ -23,7 +27,15 @@ class PhpRenderer {
       return $this;
     }
 
-    public function render(ResponseInterface $response, $template, $data = []){
+    public function setLayout($layout){
+        $this->layout=$layout;
+    }
+
+    public function getContent(){
+        return $this->content;
+    }
+
+    public function rendertemplate($template, $data = []){
        $render = function ($template, $data) {
             extract($data);
             include $template;
@@ -37,7 +49,17 @@ class PhpRenderer {
           }
 
         $render($this->templatePath . $template, $data);
-        $output = ob_get_clean();
+        $this->content = ob_get_clean();
+        return $this->content;
+    }
+
+    public function render(ResponseInterface $response, $template, $data = []){
+        $this->rendertemplate($template, $data);
+
+        if (! $this->layout) {
+            return $this->getContent();
+        }
+        $output=$this->rendertemplate($this->layout, $data);
 
         $this->container->response->getBody()->write($output);
         return $this->container->response;
