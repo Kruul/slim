@@ -10,15 +10,13 @@ use Psr\Http\Message\UriInterface;
  *  2017-01-25 * fix response (get from container)
  *  2017-01-27 * add setHeader
  *  2018-01-24 * fix post
+ *  2018-02-23 * fix __call
  */
 abstract class Controller
 {
     protected $container;
-
-    /*    protected $request;
-    protected $response;
     protected $arguments;
-    */
+
     /**
      * @param \Slim\Container
      */
@@ -32,11 +30,13 @@ abstract class Controller
 
     public function __call($actionName,$param){
         $rc= new \ReflectionClass ($this);
+        $actionName=trim($actionName,'__');
+        if(!method_exists($rc->name,$actionName)) return;
         $viewdir=rtrim(pathinfo($rc->getfilename(),PATHINFO_DIRNAME),DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.
                                 '..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'view'.DIRECTORY_SEPARATOR;
 
         $this->get('view')->setTemplatepath($viewdir);
-        return call_user_func_array(array($this, trim($actionName,'__')), []);
+        return call_user_func_array(array($this, $actionName), []);
     }
 
 /*
@@ -128,6 +128,11 @@ abstract class Controller
     protected function get($name){
          return $this->container->get($name);
     }
+
+    protected function has($name){
+         return $this->container->has($name);
+    }
+
     /**
      * Redirect.
      *

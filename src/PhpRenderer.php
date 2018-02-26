@@ -12,16 +12,20 @@ class PhpRenderer {
     private $header;
     private $layout; // ='template.phtml';
     private $content;
+    private $container;
 
     public function __construct($container){
       $this->container=$container;
-
     }
     public function setTemplatepath($templatePath){
       $this->templatePath=$templatePath;
-      //$this->content();
       return $this;
     }
+
+    public function getTemplatepath(){
+      return  $this->templatePath;
+    }
+
     public function setHeader($key, $value){
       $this->header[$key]=$value;
       return $this;
@@ -59,6 +63,7 @@ class PhpRenderer {
         if (! $this->layout) {
             return $this->getContent();
         }
+        $this->setTemplatepath('');
         $output=$this->rendertemplate($this->layout, $data);
 
         $this->container->response->getBody()->write($output);

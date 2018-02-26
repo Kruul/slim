@@ -1,5 +1,6 @@
 <?php
 namespace Kruul\Slim;
+
 /*
 Name:   Container.php
 Author: Shvager Alexander
@@ -12,8 +13,9 @@ Setting for Slim Framework 3 from file "config/config.php"
   Middleware
   Route
 
-version 2.0
+version 3.0
  * 2017-01-26 Modified from Container.php to Class
+ * 2018-02-21 Modified and optimized AppFactory, added view/layout, added Handlers.
 
 ############################################
 ##             for sample                 ##
@@ -24,6 +26,8 @@ $app=new \Kruul\Slim\Container();
 $app->run();
 
 */
+
+use Exception;
 
 class Container {
   private $container;
@@ -47,66 +51,109 @@ class Container {
       }
     }
 
-    if (isset($config['settings'])) {
+    $userSettings=array();
+    if ( isset($config['settings']) && (is_array($config['settings'])) )  {
       $userSettings=$config['settings'];
       unset($config['settings']);
-    } else $userSettings=array();
-//print_r($userSettings);exit;
+    }
 
     $this->container = new \Slim\Container(array('settings'=>$userSettings));
-    $this->container['config'] = $config;
-    $this->container['AppFactory']=function($c) {
-      if (isset($c['config']['factories'])){
-        foreach ($c['config']['factories'] as $name=>$callable){
-            if ($callable instanceof \Closure) {
-              if (isset($c[$name])) continue;
-              $c[$name]=$c->factory($callable);
-          } else $c[$name]=new $callable();
-        }
+
+    $this->container['AppFactory']=function($c) use ($config) {
+      if (isset($config['factories'])){
+        $c['factories']=$config['factories'];
+        unset($config['factories']);
       }
-      if (isset($c['config']['services'])){
-        foreach ($c['config']['services'] as $name=>$callable){
-          if ($callable instanceof \Closure) {
-              if (isset($c[$name])) continue;
-              $c[$name]=$callable;
-          }
-        }
+
+      if (isset($config['services'])){
+          $c['services']=$config['services'];
+          unset($config['services']);
       }
-      $c['view']=function ($c){
-        return new \Kruul\Slim\PhpRenderer($c);
+
+      $c['view']=function ($c) use($config){
+        $view=new \Kruul\Slim\PhpRenderer($c);
+        $layoutpath='';
+        if (isset($config['view_manager']['template_path'])) {
+           $layoutpath=$config['view_manager']['template_path'];
+        }
+
+        if (isset($config['view_manager']['layout/layout'])) {
+          $view->setLayout($layoutpath.$config['view_manager']['layout/layout']);
+          unset($config['view_manager']['layout/layout']);
+        }
+        return $view;
       };
 
-      $c['phpErrorHandler'] = function ($c) {
-	return function ($request, $response, $exception) use ($c) {
-          return $c['response']
-	        ->withStatus(500)
-                ->withHeader('Content-Type', 'text/html')
-                ->write($exception->getMessage().' in file '.basename($exception->getFile()).' in line '.$exception->getLine());
-		  };
-	  };
+      if (isset($config['notFoundHandler'])){
+          $c['notFoundHandler']=$config['notFoundHandler'];
+          unset($config['notFoundHandler']);
+      } else {
+          $c['notFoundHandler'] = function ($c) {
+              return new NotFoundHandler($c, function ($request, $response) use ($c) {
+                  return $c['response']->withStatus(404);
+                  });
+          };
+      }
 
-      $c['notFoundHandler'] = function ($c) {
-        return function ($request, $response) use ($c) {
-          return $c['response']
-              ->withStatus(404)
-              ->withHeader('Content-Type', 'text/html')
-              ->write('Page not found');
-         };
-      };
+
+
+      if (isset($config['errorHandler'])) {
+          $c['errorHandler'] = $config['errorHandler'];
+          unset($config['errorHandler']);
+      } else {
+          $c['errorHandler'] = function ($c) {
+            return new phpErrorHandler($c);
+          };
+      }
+
+      if (isset($config['phpErrorHandler'])) {
+          $c['phpErrorHandler'] = $config['phpErrorHandler'];
+          unset($config['phpErrorHandler']);
+      } else   {
+          $c['phpErrorHandler'] = function ($c) {
+          return new phpErrorHandler($c);
+//          return $c['response']
+//	        ->withStatus(500)
+//                ->withHeader('Content-Type', 'text/html')
+//                ->write($exception->getMessage().' in file '.basename($exception->getFile()).' in line '.$exception->getLine());
+//		  };
+          };
+      }
+
+
+
+      if (isset($config['notAllowedHandler'])) {
+          $c['notAllowedHandler'] = $config['notAllowedHandler'];
+      } else {
+          $c['notAllowedHandler'] = function ($c){
+              return new NotAllowedHandler($c);
+          };
+      }
 
       $app=new \Slim\App($c);
-      foreach ($c['config']['routes'] as $name=>$rule){
-        $method = preg_split('[,]',strtolower($rule['method']));
-        $route=$app->map($method,$rule['route'],$rule['action'].'__');
-        $route->setName($name);
-        if (isset($rule['middleware'])) $route->add($rule['middleware']);
-      };
+      if (isset($config['routes'])){
+        foreach ($config['routes'] as $name=>$rule){
+          if (is_array($rule['method'])) {
+              foreach ($rule['route'] as $k=>$v){ $routename.=$v.' and ';}
+              $c['ERRORMESSAGE']='Route name is duplicate: '.rtrim($routename,'and ');
+              continue;
+          }
 
-      if (isset($c['config']['middleware']))
-        foreach ($c['config']['middleware'] as $name=>$middleware ){
+          $method = preg_split('[,]',strtolower($rule['method']));
+          $route=$app->map($method,$rule['route'],$rule['action'].'__');
+          $route->setName($name);
+          if (isset($rule['middleware'])) $route->add($rule['middleware']);
+        };
+        //unset($config['routes']);
+      }
+
+      if (isset($config['middleware'])) {
+        foreach ($config['middleware'] as $name=>$middleware ){
           $app->add($middleware);
         };
-
+        unset($config['middleware']);
+      }
+      $c['config'] = $config;
       return $app;
     }; //AppFactory
 
