@@ -1,6 +1,7 @@
 <?php
 namespace Kruul\Slim;
 use Psr\Http\Message\UriInterface;
+use Slim\Http\Request;
 /*
  *  Name:   class Controller for Slim Framework
  *  Author: Shvager Alexander
@@ -11,6 +12,7 @@ use Psr\Http\Message\UriInterface;
  *  2017-01-27 * add setHeader
  *  2018-01-24 * fix post
  *  2018-02-23 * fix __call
+ *  2018-02-26 * add isPost, isGet ...
  */
 abstract class Controller
 {
@@ -56,6 +58,7 @@ abstract class Controller
      * @param Response?
      */
     protected function render($file, $args=array()){
+        $response=$this->get('response');
         return $this->get('view')->render($this->get('response'), $file, $args);
     }
 
@@ -69,12 +72,54 @@ abstract class Controller
         return $this;
     }
 
+    public function refresh($dataquery=''){
+        if (empty($dataquery))  {
+            $dataquery=http_build_query($this->getParsedBody());
+        }
+        $Url = (string)($this->get('request')->getUri()->withQuery($dataquery) );
+        return $this->redirect($Url);
+    }
+
+    public function isMethod($method){
+        return $this->get('request')->getMethod() === $method;
+    }
+
+    public function isGet(){
+        return $this->get('request')->isMethod('GET');
+    }
+
+    public function isPost(){
+        return $this->get('request')->isMethod('POST');
+    }
+
+    public function isPut(){
+        return $this->get('request')->isMethod('PUT');
+    }
+
+    public function isPatch(){
+        return $this->get('request')->isMethod('PATCH');
+    }
+
+    public function isDelete(){
+        return $this->get('request')->isMethod('DELETE');
+    }
+
+    public function isHead(){
+        return $this->get('request')->isMethod('HEAD');
+    }
+
+    public function isOptions(){
+        return $this->get('request')->isMethod('OPTIONS');
+    }
+
     /**
      * Return true if XHR request$content = $request->getContent();
      */
-    protected function isXhr(){
+    public function isXhr(){
         return $this->get('request')->isXhr();
     }
+
+
 
 
     public function setArguments($arg){
@@ -104,6 +149,10 @@ abstract class Controller
 
     public function getBodyContent(){
        return $this->get('request')->getBody()->getContents();
+    }
+
+    public function getParsedBody(){
+        return $this->get('request')->getParsedBody();
     }
 
     public function getParsedBodyParam($name,$defaults = null){

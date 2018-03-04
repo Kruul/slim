@@ -1,5 +1,4 @@
 <?php
-
 namespace Kruul\Slim;
 
 use Slim\Handlers\NotFound;
@@ -13,12 +12,14 @@ class NotFoundHandler extends NotFound {
     }
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response) {
-        parent::__invoke($request, $response);
-        $view=$this->container['view'];
-        $view->setTemplatepath('public/layout/');
-        $view->render($response, 'notfound.html');
-
-        return $response->withStatus(404);
+        $contentType = $this->determineContentType($request);
+        if (($contentType == 'text/html') && (is_file('public/layout/notfound.phtml'))){
+            $view=$this->container['view'];
+            $view->setTemplatepath('public/layout/');
+            $view->render($response, 'notfound.phtml');
+            return $response->withStatus(404);
+        } else {
+            return parent::__invoke($request, $response, $methods);
+        }
     }
-
 }

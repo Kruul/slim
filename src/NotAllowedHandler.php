@@ -21,7 +21,7 @@ class NotAllowedHandler extends NotAllowed{
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, array $methods){
         $contentType = $this->determineContentType($request);
-        if ($contentType == 'text/html'){
+        if (($contentType == 'text/html') && (is_file('public/layout/notallowed.phtml'))){
             if ($request->getMethod() === 'OPTIONS') {
                 $status = 200;
             } else {
