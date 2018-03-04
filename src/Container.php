@@ -61,7 +61,16 @@ class Container {
 
     $this->container['AppFactory']=function($c) use ($config) {
       if (isset($config['factories'])){
-        $c['factories']=$config['factories'];
+        foreach ($config['factories'] as $name=>$callable){
+            if ($callable instanceof \Closure) {
+              if (isset($c[$name])) continue;
+              $c[$name]=$c->factory($callable);
+          } else $c[$name]=$c->factory(
+                   function () use ($callable){
+                        return new $callable;
+                   }
+                 );
+        }
         unset($config['factories']);
       }
 
