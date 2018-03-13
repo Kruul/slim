@@ -79,20 +79,6 @@ class Container {
           unset($config['services']);
       }
 
-      $c['view']=function ($c) use($config){
-        $view=new \Kruul\Slim\PhpRenderer($c);
-        $layoutpath='';
-        if (isset($config['view_manager']['template_path'])) {
-           $layoutpath=$config['view_manager']['template_path'];
-        }
-
-        if (isset($config['view_manager']['layout/layout'])) {
-          $view->setLayout($layoutpath.$config['view_manager']['layout/layout']);
-          unset($config['view_manager']['layout/layout']);
-        }
-        return $view;
-      };
-
       if (isset($config['notFoundHandler'])){
           $c['notFoundHandler']=$config['notFoundHandler'];
           unset($config['notFoundHandler']);
@@ -103,8 +89,6 @@ class Container {
                   });
           };
       }
-
-
 
       if (isset($config['errorHandler'])) {
           $c['errorHandler'] = $config['errorHandler'];
@@ -139,13 +123,33 @@ class Container {
           };
       }
 
+      $c['view']=function ($c) use($config){
+        $view=new \Kruul\Slim\PhpRenderer($c);
+        $layoutpath='';
+        if (isset($config['view_manager']['template_path'])) {
+           $layoutpath=$config['view_manager']['template_path'];
+        }
+
+        if (isset($config['view_manager']['layout/layout'])) {
+          if (is_file($file=$layoutpath.$config['view_manager']['layout/layout'])) {
+              $view->setLayout($layoutpath.$config['view_manager']['layout/layout']);
+          } else {
+              throw new \Exception('Layout not found');
+          }
+          unset($config['view_manager']['layout/layout']);
+        }
+        return $view;
+      };
+
+
       $app=new \Slim\App($c);
       if (isset($config['routes'])){
         foreach ($config['routes'] as $name=>$rule){
           if (is_array($rule['method'])) {
               foreach ($rule['route'] as $k=>$v){ $routename.=$v.' and ';}
-              $c['ERRORMESSAGE']='Route name is duplicate: '.rtrim($routename,'and ');
-              continue;
+              //$c['ERRORMESSAGE']='Route name is duplicate: '.rtrim($routename,'and ');
+              //continue;
+              throw new \Exception('Route name is duplicate: '.rtrim($routename,'and '));
           }
 
           $method = preg_split('[,]',strtolower($rule['method']));
@@ -170,9 +174,13 @@ class Container {
   }
 
   public function run(){
-    if (!$this->container) $this->init();
-    $app = $this->container->get('AppFactory');
-    $app->run();
+    try {
+        if (!$this->container) $this->init();
+        $app = $this->container->get('AppFactory');
+        $app->run();
+      } catch (\Exception $e) {
+          echo $e->getMessage();
+      }
   }
 
 }

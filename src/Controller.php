@@ -72,11 +72,12 @@ abstract class Controller
         return $this;
     }
 
-    public function refresh($dataquery=''){
-        if (empty($dataquery))  {
-            $dataquery=http_build_query($this->getParsedBody());
+    public function refresh($data){
+        if (empty($data))  {
+           $data=$this->getParsedBody();
         }
-        $Url = (string)($this->get('request')->getUri()->withQuery($dataquery) );
+        $data=http_build_query($data);
+        $Url = (string)($this->get('request')->getUri()->withQuery($data) );
         return $this->redirect($Url);
     }
 
