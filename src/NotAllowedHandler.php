@@ -9,8 +9,6 @@ namespace Kruul\Slim;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Slim\Http\Body;
-use UnexpectedValueException;
 use Slim\Handlers\NotAllowed;
 
 class NotAllowedHandler extends NotAllowed{
@@ -21,7 +19,8 @@ class NotAllowedHandler extends NotAllowed{
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, array $methods){
         $contentType = $this->determineContentType($request);
-        if (($contentType == 'text/html') && (is_file('public/layout/notallowed.phtml'))){
+        $view_manager=$this->container['config']['view_manager'];
+        if (($contentType == 'text/html') && (is_file($view_manager['template_path'].$view_manager['error/405']))){
             if ($request->getMethod() === 'OPTIONS') {
                 $status = 200;
             } else {
@@ -29,8 +28,8 @@ class NotAllowedHandler extends NotAllowed{
             }
             $allow = implode(', ', $methods);
             $view=$this->container['view'];
-            $view->setTemplatepath('public/layout/');
-            $view->render($response, 'notallowed.phtml',['allow'=>$allow]);
+            $view->setTemplatepath($view_manager['template_path']);
+            $view->render($response, $view_manager['error/405'],['allow'=>$allow]);
             return $response->withStatus($status);
         } else {
             parent::__invoke($request, $response, $methods);
