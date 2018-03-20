@@ -1,5 +1,8 @@
 <?php
 namespace Kruul\Slim;
+use Exception;
+use Kruul\Slim\ContainerInterface;
+use Kruul\Slim\InvokableInterface;
 
 /*
 Name:   Container.php
@@ -27,7 +30,6 @@ $app->run();
 
 */
 
-use Exception;
 
 class Container {
   private $container;
@@ -65,11 +67,20 @@ class Container {
             if ($callable instanceof \Closure) {
               if (isset($c[$name])) continue;
               $c[$name]=$c->factory($callable);
-          } else $c[$name]=$c->factory(
-                   function () use ($callable){
-                        return new $callable;
-                   }
-                 );
+          } else $c[$name]=//$c->factory(
+//                   function () use ($callable){
+//                        return new $callable;
+//                   }
+                    function () use ($callable){
+                        $obj= new $callable;
+                        if ($obj instanceof ContainerInterface ){
+                            $obj->setContainer($this->container);
+                        }
+                        if ($obj instanceof InvokableInterface){
+                            return $obj();
+                        } else return $obj;
+                    }
+                 ;
         }
         unset($config['factories']);
       }
@@ -138,6 +149,22 @@ class Container {
           }
           unset($config['view_manager']['layout/layout']);
         }
+
+        if (isset($config['view_helpers'])){
+            foreach ($config['view_helpers'] as $name=>$callable){
+                if (!is_callable($callable)) {
+                    $callable= function () use ($callable){
+                        $obj= new $callable;
+                        if ($obj instanceof ContainerInterface ){
+                            $obj->setContainer($this->container);
+                        }
+                        return $obj();
+                   };
+                }
+                if (is_callable($callable)) $view->setHelper($name,$callable);
+                else throw new Exception ('Helper is not callable');
+            }
+        }
         return $view;
       };
 
@@ -147,8 +174,6 @@ class Container {
         foreach ($config['routes'] as $name=>$rule){
           if (is_array($rule['method'])) {
               foreach ($rule['route'] as $k=>$v){ $routename.=$v.' and ';}
-              //$c['ERRORMESSAGE']='Route name is duplicate: '.rtrim($routename,'and ');
-              //continue;
               throw new \Exception('Route name is duplicate: '.rtrim($routename,'and '));
           }
 

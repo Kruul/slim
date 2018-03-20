@@ -13,6 +13,8 @@ class PhpRenderer {
     private $layout; // ='template.phtml';
     private $content;
     private $container;
+    private $helpers;
+    private $data;
 
     public function __construct($container){
       $this->container=$container;
@@ -37,6 +39,17 @@ class PhpRenderer {
 
     public function getContent(){
         return $this->content;
+    }
+
+    public function setHelper($name, $callable){
+        $this->helper[$name] = $callable;
+        return $this;
+    }
+
+    public function __call($name, $args){
+        if ($this->helper[$name]) {
+            return call_user_func_array($this->helper[$name], $args);
+        }
     }
 
     public function rendertemplate($template, $data = []){

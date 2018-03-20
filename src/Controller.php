@@ -1,7 +1,8 @@
 <?php
 namespace Kruul\Slim;
 use Psr\Http\Message\UriInterface;
-use Slim\Http\Request;
+//use Slim\Http\Request;
+use Kruul\Slim\ContainerInterface;
 /*
  *  Name:   class Controller for Slim Framework
  *  Author: Shvager Alexander
@@ -13,8 +14,9 @@ use Slim\Http\Request;
  *  2018-01-24 * fix post
  *  2018-02-23 * fix __call
  *  2018-02-26 * add isPost, isGet ...
+ *  2018-03-20 * implements ContainerInterface
  */
-abstract class Controller
+abstract class Controller implements ContainerInterface
 {
     protected $container;
     protected $arguments;
@@ -24,6 +26,11 @@ abstract class Controller
      */
     public function __construct($container)  {
         $this->container = $container;
+    }
+
+    public function setContainer($container) {
+        $this->container=$container;
+        return $this;
     }
 
     public function getContainer(){
