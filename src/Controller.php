@@ -65,7 +65,6 @@ abstract class Controller implements ContainerInterface
      * @param Response?
      */
     protected function render($file, $args=array()){
-        $response=$this->get('response');
         return $this->get('view')->render($this->get('response'), $file, $args);
     }
 
