@@ -17,11 +17,12 @@ class phpErrorHandler extends PhpError{
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, \Throwable $error){
         $contentType = $this->determineContentType($request);
-        if (($contentType == 'text/html') && (is_file('public/layout/error.phtml'))){
+        $view_manager=$this->container['config']['view_manager'];
+        if (($contentType == 'text/html') && (is_file($view_manager['template_path'].$view_manager['error/index']))){
             $output = $this->renderHtmlErrorMessage($error);
             $view=$this->container['view'];
-            $view->setTemplatepath('public/layout/');
-            $view->render($response, 'error.phtml',['error'=>$output]);
+            $view->setTemplatepath($view_manager['template_path']);
+            $view->render($response, $view_manager['error/index'],['error'=>$output]);
             return $response->withStatus(500);
         } else {
             return parent::__invoke($request, $response, $error);

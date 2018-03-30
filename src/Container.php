@@ -176,10 +176,20 @@ class Container {
               foreach ($rule['route'] as $k=>$v){ $routename.=$v.' and ';}
               throw new \Exception('Route name is duplicate: '.rtrim($routename,'and '));
           }
+          if (strtoupper($rule['method'])=='CRUD'){
+            $app->map( ['GET']   ,$rule['route'].'[/get/{offset:\d+}[/{maxsize:\d+}]]',$rule['controller'].':IndexAction'.'__')->setName($name.'index');
+            $app->map( ['GET']   ,$rule['route'].'/create',$rule['controller'].':CreateAction'.'__')->setName($name.'create');
+            $app->map( ['POST']  ,$rule['route'].'/add',$rule['controller'].':AddAction'.'__')->setName($name.'add');
+            $app->map( ['GET']   ,$rule['route'].'/{id:\d+}',$rule['controller'].':ShowAction'.'__')->setName($name.'show');
+            $app->map( ['GET']   ,$rule['route'].'/{id:\d+}/edit',$rule['controller'].':EditAction'.'__')->setName($name.'edit');
+            $app->map( ['PUT']   ,$rule['route'].'/{id:\d+}',$rule['controller'].':UpdateAction'.'__')->setName($name.'update');
+            $app->map( ['DELETE'],$rule['route'].'/{id:\d+}',$rule['controller'].':DeleteAction'.'__')->setName($name.'delete');
 
-          $method = preg_split('[,]',strtolower($rule['method']));
-          $route=$app->map($method,$rule['route'],$rule['action'].'__');
-          $route->setName($name);
+          } else {
+            $method = preg_split('[,]',strtolower($rule['method']));
+            $app->map($method,$rule['route'],$rule['action'].'__')->setName($name);
+          }
+
           if (isset($rule['middleware'])) $route->add($rule['middleware']);
         };
         //unset($config['routes']);

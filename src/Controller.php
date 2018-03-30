@@ -20,6 +20,8 @@ abstract class Controller implements ContainerInterface
 {
     protected $container;
     protected $arguments;
+    protected $request;
+    protected $response;
 
     /**
      * @param \Slim\Container
@@ -40,12 +42,16 @@ abstract class Controller implements ContainerInterface
     public function __call($actionName,$param){
         $rc= new \ReflectionClass ($this);
         $actionName=trim($actionName,'__');
-        if(!method_exists($rc->name,$actionName)) return;
+        if(!method_exists($rc->name,$actionName))            throw new \Exception('Action not found');
         $viewdir=rtrim(pathinfo($rc->getfilename(),PATHINFO_DIRNAME),DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.
                                 '..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'view'.DIRECTORY_SEPARATOR;
 
         $this->get('view')->setTemplatepath($viewdir);
-        return call_user_func_array(array($this, $actionName), []);
+        $this->request=$param[0];
+        $this->response=$param[1];
+        //$this->arguments=$this->request->getAttribute('route')->getArguments();
+        $this->arguments=$param[2];
+        return call_user_func_array(array($this, $actionName), [$this->arguments]);
     }
 
 /*
@@ -65,8 +71,7 @@ abstract class Controller implements ContainerInterface
      * @param Response?
      */
     protected function render($file, $args=array()){
-        $response=$this->get('response');
-        return $this->get('view')->render($this->get('response'), $file, $args);
+        return $this->get('view')->render($this->response, $file, $args);
     }
 
     protected function setHeader($key,$value){
@@ -84,51 +89,48 @@ abstract class Controller implements ContainerInterface
            $data=$this->getParsedBody();
         }
         $data=http_build_query($data);
-        $Url = (string)($this->get('request')->getUri()->withQuery($data) );
+        $Url = (string)($this->request->getUri()->withQuery($data) );
         return $this->redirect($Url);
     }
 
     public function isMethod($method){
-        return $this->get('request')->getMethod() === $method;
+        return $this->request->getMethod() === $method;
     }
 
     public function isGet(){
-        return $this->get('request')->isMethod('GET');
+        return $this->request->isMethod('GET');
     }
 
     public function isPost(){
-        return $this->get('request')->isMethod('POST');
+        return $this->request->isMethod('POST');
     }
 
     public function isPut(){
-        return $this->get('request')->isMethod('PUT');
+        return $this->request->isMethod('PUT');
     }
 
     public function isPatch(){
-        return $this->get('request')->isMethod('PATCH');
+        return $this->request->isMethod('PATCH');
     }
 
     public function isDelete(){
-        return $this->get('request')->isMethod('DELETE');
+        return $this->request->isMethod('DELETE');
     }
 
     public function isHead(){
-        return $this->get('request')->isMethod('HEAD');
+        return $this->request->isMethod('HEAD');
     }
 
     public function isOptions(){
-        return $this->get('request')->isMethod('OPTIONS');
+        return $this->request->isMethod('OPTIONS');
     }
 
     /**
      * Return true if XHR request$content = $request->getContent();
      */
     public function isXhr(){
-        return $this->get('request')->isXhr();
+        return $this->request->isXhr();
     }
-
-
-
 
     public function setArguments($arg){
         $this->arguments=$arg;
@@ -156,25 +158,26 @@ abstract class Controller implements ContainerInterface
     }
 
     public function getBodyContent(){
-       return $this->get('request')->getBody()->getContents();
+       return $this->request->getBody()->getContents();
     }
 
     public function getParsedBody(){
-        return $this->get('request')->getParsedBody();
+        return $this->request->getParsedBody();
     }
 
     public function getParsedBodyParam($name,$defaults = null){
-        return $this->get('request')->getParsedBodyParam($name, $defaults);
+        return $this->request->getParsedBodyParam($name, $defaults);
     }
 
     protected function getQueryParam($name, $default=null){
-        return $this->get('request')->getQueryParam($name, $default);
+        return $this->request->getQueryParam($name, $default);
     }
+
     /**
      * Get the GET params
      */
     protected function getQueryParams(){
-        return $this->get('request')->getQueryParams();
+        return $this->request->getQueryParams();
     }
 
     /**
@@ -203,7 +206,7 @@ abstract class Controller implements ContainerInterface
      * @return self
      */
     protected function redirect($url, $status = 302){
-        return $this->get('response')->withRedirect($url, $status);
+        return $this->response->withRedirect($url, $status);
     }
     /**
      * Pass on the control to another action. Of the same class (for now)
@@ -214,12 +217,8 @@ abstract class Controller implements ContainerInterface
      * @internal param string $status The redirect HTTP status code.
      */
 
-/*    public function forward($actionName, $data=array()){
-        // update the action name that was last used
-        if (method_exists($this->response, 'setActionName')) {
-            $this->response->setActionName($actionName.'__');
-        }
+    public function forward($actionName, $data=array()){
         return call_user_func_array(array($this, $actionName), $data);
     }
-*/
+
 }
