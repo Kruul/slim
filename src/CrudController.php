@@ -2,6 +2,7 @@
 namespace Kruul\Slim;
 
 use Kruul\Slim\Controller;
+use Kruul\Slim\CrudControllerInterface;
 
 /** sample route
  *
@@ -16,23 +17,23 @@ use Kruul\Slim\Controller;
  *
  **/
 
-abstract class CrudController extends Controller {
+abstract class CrudController extends Controller{
 
     public function __construct($container) {
         parent::__construct($container);
     }
 
-        public function  IndexAction(){ //get
+    public function  IndexAction(){ //get
       return $this->render('',[]);
     }
 
     public function  ShowAction(){ //get
-      $sss=$this->getQueryParams();
+
       $this->id=$this->getArgument('id');
       return $this->render('',[]);
     }
 
-    public function  EditAction(){ //get
+    public function  EditAction(array $param){ //get
       return $this->render('',[]);
     }
 

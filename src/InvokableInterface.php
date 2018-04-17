@@ -6,6 +6,6 @@ namespace Kruul\Slim;
  *
  */
 interface InvokableInterface{
-    public function __invoke();
+   // public function __invoke();
 }
 

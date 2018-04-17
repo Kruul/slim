@@ -158,7 +158,7 @@ class Container {
                         if ($obj instanceof ContainerInterface ){
                             $obj->setContainer($this->container);
                         }
-                        return $obj();
+                        return call_user_func_array($obj, func_get_args());
                    };
                 }
                 if (is_callable($callable)) $view->setHelper($name,$callable);
@@ -177,13 +177,13 @@ class Container {
               throw new \Exception('Route name is duplicate: '.rtrim($routename,'and '));
           }
           if (strtoupper($rule['method'])=='CRUD'){
-            $app->map( ['GET']   ,$rule['route'].'[/get/{offset:\d+}[/{maxsize:\d+}]]',$rule['controller'].':IndexAction'.'__')->setName($name.'index');
-            $app->map( ['GET']   ,$rule['route'].'/create',$rule['controller'].':CreateAction'.'__')->setName($name.'create');
-            $app->map( ['POST']  ,$rule['route'].'/add',$rule['controller'].':AddAction'.'__')->setName($name.'add');
-            $app->map( ['GET']   ,$rule['route'].'/{id:\d+}',$rule['controller'].':ShowAction'.'__')->setName($name.'show');
-            $app->map( ['GET']   ,$rule['route'].'/{id:\d+}/edit',$rule['controller'].':EditAction'.'__')->setName($name.'edit');
-            $app->map( ['PUT']   ,$rule['route'].'/{id:\d+}',$rule['controller'].':UpdateAction'.'__')->setName($name.'update');
-            $app->map( ['DELETE'],$rule['route'].'/{id:\d+}',$rule['controller'].':DeleteAction'.'__')->setName($name.'delete');
+            $app->map( ['GET']   ,$rule['route'].'[/get/{offset:\d+}[/{maxsize:\d+}]]',$rule['controller'].':IndexAction'.'__')->setName($name.':index');
+            $app->map( ['GET']   ,$rule['route'].'/create',$rule['controller'].':CreateAction'.'__')->setName($name.':create');
+            $app->map( ['POST']  ,$rule['route'].'/add',$rule['controller'].':AddAction'.'__')->setName($name.':add');
+            $app->map( ['GET']   ,$rule['route'].'/{id:\d+}',$rule['controller'].':ShowAction'.'__')->setName($name.':show');
+            $app->map( ['GET']   ,$rule['route'].'/{id:\d+}/edit',$rule['controller'].':EditAction'.'__')->setName($name.':edit');
+            $app->map( ['PUT']   ,$rule['route'].'/{id:\d+}',$rule['controller'].':UpdateAction'.'__')->setName($name.':update');
+            $app->map( ['DELETE'],$rule['route'].'/{id:\d+}',$rule['controller'].':DeleteAction'.'__')->setName($name.':delete');
 
           } else {
             $method = preg_split('[,]',strtolower($rule['method']));
